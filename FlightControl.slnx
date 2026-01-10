@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="FlightControl.Api/FlightControl.Api.csproj" />
+  <Project Path="FlightControl.AppHost/FlightControl.AppHost.csproj" />
+  <Project Path="FlightControl.Dashboard/FlightControl.Dashboard.csproj" />
+  <Project Path="FlightControl.ServiceDefaults/FlightControl.ServiceDefaults.csproj" />
+  <Project Path="FlightControl.Sim/FlightControl.Sim.csproj" />
+</Solution>
