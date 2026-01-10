@@ -1,0 +1,148 @@
+﻿@page "/"
+@using FlightControl.ServiceDefaults
+@using FlightControl.Dashboard
+@inject FlightApiClient ApiClient
+@implements IDisposable
+
+<PageTitle>Airport Control Dashboard</PageTitle>
+
+<div class="dashboard-container">
+    <!-- Left Sidebar: Flight List -->
+    <div class="card">
+        <div class="card-header">Active Flights</div>
+        <div class="flight-list">
+            @if (flights == null)
+            {
+                <div class="p-3">Connecting to Radar...</div>
+            }
+            else
+            {
+                @foreach (var flight in flights.OrderBy(f => f.FlightNumber))
+                {
+                    <div class="flight-item @(selectedFlight?.Id == flight.Id ? "active" : "")" @onclick="() => selectedFlight = flight">
+                        <div class="flight-id">@flight.FlightNumber</div>
+                        <div>
+                            <div style="font-size: 0.7rem; color: var(--text-secondary)">ALT: @flight.Altitude.ToString("N0") FT</div>
+                            <div style="font-size: 0.7rem; color: var(--text-secondary)">SPD: @flight.Speed.ToString("N0") KTS</div>
+                        </div>
+                        <div class="flight-status">@flight.Status</div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Center: Radar Map -->
+    <div class="map-container">
+        <div class="grid-overlay"></div>
+        <div class="hud-overlay">
+            <div class="hud-panel">
+                <div style="color: var(--accent); font-weight: 700;">RADAR ACTIVE</div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary)">REGION: GLOBAL SECTOR</div>
+            </div>
+            @if (selectedFlight != null)
+            {
+                <div class="hud-panel">
+                    <div style="color: var(--warning); font-weight: 700;">TRACKING: @selectedFlight.FlightNumber</div>
+                    <div style="font-size: 0.8rem;">LAT: @selectedFlight.Latitude.ToString("F4")</div>
+                    <div style="font-size: 0.8rem;">LON: @selectedFlight.Longitude.ToString("F4")</div>
+                </div>
+            }
+        </div>
+
+        @if (flights != null)
+        {
+            @foreach (var flight in flights)
+            {
+                /* Simple projection: map lat 30-60 and lon -130 to 20 to percentage */
+                var x = (flight.Longitude + 130) * (100.0 / 150.0);
+                var y = (60 - flight.Latitude) * (100.0 / 30.0);
+
+                <div class="plane-marker" style="left: @(x)%; top: @(y)%;">
+                    <svg class="plane-icon" style="transform: rotate(@(flight.Heading)deg)" viewBox="0 0 24 24">
+                        <path d="M21,16L22,13L15,10L15,3.5A1.5,1.5 0 0,0 13.5,2A1.5,1.5 0 0,0 12,3.5V10L5,13L6,16L12,14V19L10,21V22L13.5,21L17,22V21L15,19V14L21,16Z" />
+                    </svg>
+                    <div style="position: absolute; top: 100%; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 0.6rem; color: var(--text-secondary)">
+                        @flight.FlightNumber
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <!-- Right Sidebar: Stats & Weather -->
+    <div class="card">
+        <div class="card-header">System Operations</div>
+        
+        <div class="mb-4">
+            <div class="stat-value">@(flights?.Length ?? 0)</div>
+            <div class="stat-label">Total In-Sector Flights</div>
+        </div>
+
+        <div class="mb-4">
+            <div class="stat-value" style="color: var(--success)">NORMAL</div>
+            <div class="stat-label">Traffic Density</div>
+        </div>
+
+        <div class="card-header mt-4">Weather Stations</div>
+        <div class="hud-panel">
+            <div style="display: flex; justify-content: space-between;">
+                <span>JFK</span>
+                <span style="color: var(--success)">CLEAR</span>
+            </div>
+            <div style="font-size: 0.7rem; color: var(--text-secondary)">WIND: 12KT @@ 220°</div>
+        </div>
+        <div class="hud-panel">
+            <div style="display: flex; justify-content: space-between;">
+                <span>LHR</span>
+                <span style="color: var(--warning)">FOGGY</span>
+            </div>
+            <div style="font-size: 0.7rem; color: var(--text-secondary)">VIS: 500M</div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .mb-4 { margin-bottom: 24px; }
+    .mt-4 { margin-top: 24px; }
+    .flight-item.active {
+        background: rgba(59, 130, 246, 0.15);
+        border-left: 3px solid var(--accent);
+    }
+</style>
+
+@code {
+    private Flight[]? flights;
+    private Flight? selectedFlight;
+    private Timer? timer;
+
+    protected override void OnInitialized()
+    {
+        timer = new Timer(async _ =>
+        {
+            await InvokeAsync(UpdateData);
+        }, null, 0, 1000);
+    }
+
+    private async Task UpdateData()
+    {
+        try
+        {
+            flights = await ApiClient.GetFlightsAsync();
+            if (selectedFlight != null)
+            {
+                selectedFlight = flights.FirstOrDefault(f => f.Id == selectedFlight.Id);
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Radar connection failure: {ex.Message}");
+        }
+    }
+
+    public void Dispose()
+    {
+        timer?.Dispose();
+    }
+}
