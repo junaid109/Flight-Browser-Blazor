@@ -183,12 +183,21 @@
     private Flight? selectedFlight;
     private Timer? timer;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        timer = new Timer(async _ =>
+        // Initial fetch
+        await UpdateData();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
         {
-            await InvokeAsync(UpdateData);
-        }, null, 0, 1000);
+            timer = new Timer(async _ =>
+            {
+                await InvokeAsync(UpdateData);
+            }, null, 1000, 1000);
+        }
     }
 
     private async Task UpdateData()
