@@ -35,7 +35,28 @@
     <!-- Center: Radar Map -->
     <div class="map-container">
         <div class="grid-overlay"></div>
-        <div class="hud-overlay">
+        <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;" viewBox="0 0 100 100" preserveAspectRatio="none">
+            @if (flights != null)
+            {
+                @foreach (var flight in flights)
+                {
+                    if (flight.History != null && flight.History.Count > 1)
+                    {
+                        var points = string.Join(" ", flight.History.Select(h => 
+                        {
+                            var (px, py) = Project(h.Latitude, h.Longitude);
+                            return $"{px:F1},{py:F1}";
+                        }));
+                        var (cx, cy) = Project(flight.Latitude, flight.Longitude);
+                        points += $" {cx:F1},{cy:F1}";
+
+                        <polyline points="@points" fill="none" stroke="@(selectedFlight?.Id == flight.Id ? "var(--accent)" : "rgba(255,255,255,0.15)")" stroke-width="@(selectedFlight?.Id == flight.Id ? "1.5" : "0.5")" />
+                    }
+                }
+            }
+        </svg>
+
+        <div class="hud-overlay" style="z-index: 2;">
             <div class="hud-panel">
                 <div style="color: var(--accent); font-weight: 700;">RADAR ACTIVE</div>
                 <div style="font-size: 0.7rem; color: var(--text-secondary)">REGION: GLOBAL SECTOR</div>
@@ -46,6 +67,7 @@
                     <div style="color: var(--warning); font-weight: 700;">TRACKING: @selectedFlight.FlightNumber</div>
                     <div style="font-size: 0.8rem;">LAT: @selectedFlight.Latitude.ToString("F4")</div>
                     <div style="font-size: 0.8rem;">LON: @selectedFlight.Longitude.ToString("F4")</div>
+                    <div style="font-size: 0.7rem; margin-top: 4px; color: var(--text-secondary)">@selectedFlight.Origin &rarr; @selectedFlight.Destination</div>
                 </div>
             }
         </div>
@@ -55,10 +77,9 @@
             @foreach (var flight in flights)
             {
                 /* Simple projection: map lat 30-60 and lon -130 to 20 to percentage */
-                var x = (flight.Longitude + 130) * (100.0 / 150.0);
-                var y = (60 - flight.Latitude) * (100.0 / 30.0);
+                var (x, y) = Project(flight.Latitude, flight.Longitude);
 
-                <div class="plane-marker" style="left: @(x)%; top: @(y)%;">
+                <div class="plane-marker" style="left: @(x)%; top: @(y)%; z-index: 3;" @onclick="() => selectedFlight = flight">
                     <svg class="plane-icon" style="transform: rotate(@(flight.Heading)deg)" viewBox="0 0 24 24">
                         <path d="M21,16L22,13L15,10L15,3.5A1.5,1.5 0 0,0 13.5,2A1.5,1.5 0 0,0 12,3.5V10L5,13L6,16L12,14V19L10,21V22L13.5,21L17,22V21L15,19V14L21,16Z" />
                     </svg>
@@ -99,6 +120,52 @@
             </div>
             <div style="font-size: 0.7rem; color: var(--text-secondary)">VIS: 500M</div>
         </div>
+
+        @if (selectedFlight != null)
+        {
+            <div class="card-header mt-4">Telemetry: @selectedFlight.FlightNumber</div>
+            <div class="hud-panel">
+                <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 8px;">ALTITUDE PROFILE</div>
+                
+                <svg width="100%" height="60" viewBox="0 0 100 100" preserveAspectRatio="none" style="border-bottom: 1px solid var(--text-secondary); overflow: visible;">
+                    @{
+                         var hist = selectedFlight.History;
+                         if (hist != null && hist.Count > 1)
+                         {
+                             var maxAlt = hist.Max(h => h.Altitude) + 500;
+                             var minAlt = Math.Max(0, hist.Min(h => h.Altitude) - 500);
+                             var range = maxAlt - minAlt;
+                             if (range == 0) range = 1;
+                             
+                             var points = "";
+                             for(int i=0; i<hist.Count; i++)
+                             {
+                                 var h = hist[i];
+                                 var x = (double)i / (hist.Count - 1) * 100.0;
+                                 var y = 100 - ((h.Altitude - minAlt) / range * 100.0);
+                                 points += $"{x:F1},{y:F1} ";
+                             }
+                             <polyline points="@points" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke" />
+                         }
+                    }
+                </svg>
+                <div style="display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--text-secondary); margin-top: 4px;">
+                     <span>PAST</span>
+                     <span>NOW</span>
+                </div>
+
+                <div style="margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                     <div>
+                        <div style="font-size: 0.6rem; color: var(--text-secondary)">ORIGIN</div>
+                        <div style="font-weight: bold">@selectedFlight.Origin</div>
+                     </div>
+                     <div>
+                        <div style="font-size: 0.6rem; color: var(--text-secondary)">DESTINATION</div>
+                        <div style="font-weight: bold">@selectedFlight.Destination</div>
+                     </div>
+                </div>
+            </div>
+        }
     </div>
 </div>
 
@@ -144,5 +211,12 @@
     public void Dispose()
     {
         timer?.Dispose();
+    }
+
+    private (double x, double y) Project(double lat, double lon)
+    {
+        var x = (lon + 130) * (100.0 / 150.0);
+        var y = (60 - lat) * (100.0 / 30.0);
+        return (x, y);
     }
 }

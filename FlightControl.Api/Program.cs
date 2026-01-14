@@ -49,6 +49,20 @@ app.Run();
 
 public class FlightStore
 {
-    public ConcurrentDictionary<string, Flight> Flights { get; } = new();
+    public ConcurrentDictionary<string, Flight> Flights { get; }
+
+    public FlightStore()
+    {
+        var initialFlights = new Flight[]
+        {
+            new("FL101", "AA101", 40.7128, -74.0060, 30000, 500, 90, "EnRoute", "KJFK", "EGLL", new()),
+            new("FL102", "BA202", 51.5074, -0.1278, 32000, 520, 270, "EnRoute", "EGLL", "KJFK", new()),
+            new("FL103", "DL303", 34.0522, -118.2437, 35000, 510, 45, "EnRoute", "KLAX", "RJTT", new()),
+            new("FL104", "UA404", 41.8781, -87.6298, 28000, 490, 180, "EnRoute", "KORD", "KMIA", new()),
+            new("FL105", "AF505", 48.8566, 2.3522, 31000, 515, 135, "EnRoute", "LFPG", "OMDB", new())
+        };
+
+        Flights = new ConcurrentDictionary<string, Flight>(initialFlights.ToDictionary(f => f.Id));
+    }
 }
 

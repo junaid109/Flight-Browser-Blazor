@@ -10,7 +10,7 @@ Write-Host ""
 Write-Host "Starting Flight API on http://localhost:5000..." -ForegroundColor Green
 Start-Process pwsh -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot\FlightControl.Api'; Write-Host '🛫 Flight API Starting...' -ForegroundColor Cyan; dotnet run"
 
-Start-Sleep -Seconds 3
+Start-Sleep -Seconds 5
 
 # Start Simulator (connects to API on port 5000)
 Write-Host "Starting Flight Simulator..." -ForegroundColor Green
