@@ -9,11 +9,11 @@ builder.AddServiceDefaults();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Configure HttpClient with fallback for manual startup
-var apiUrl = builder.Configuration["services:api:http:0"] ?? "http://localhost:5000";
+// Configure HttpClient with Aspire service discovery
 builder.Services.AddHttpClient<FlightApiClient>(client => 
 {
-    client.BaseAddress = new Uri(apiUrl);
+    // "api" matches the service name defined in AppHost
+    client.BaseAddress = new Uri("https+http://api");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
