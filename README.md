@@ -27,6 +27,7 @@ This solution demonstrates a modern microservices architecture using .NET Aspire
               │  (Shared Services)    │
               └───────────────────────┘
 ```
+<img width="1913" height="860" alt="image" src="https://github.com/user-attachments/assets/5cf41fc4-8aca-4eb7-93c7-f09a424803da" />
 
 ### Projects
 
