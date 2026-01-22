@@ -36,6 +36,19 @@
     <div class="map-container">
         <div class="grid-overlay"></div>
         <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <!-- Simplified World Map Background -->
+            <g fill="rgba(255, 255, 255, 0.05)" stroke="none">
+                <!-- North America -->
+                <path d="M10,20 L30,15 L45,18 L40,30 L20,35 L10,20 Z" />
+                <!-- South America -->
+                <path d="M35,45 L45,45 L50,60 L40,75 L30,55 Z" />
+                <!-- Europe/Asia -->
+                <path d="M50,15 L70,12 L90,15 L95,30 L80,40 L60,35 L50,25 Z" />
+                <!-- Africa -->
+                <path d="M50,40 L65,40 L70,55 L60,70 L50,55 Z" />
+                <!-- Australia -->
+                <path d="M80,60 L95,60 L90,75 L75,70 Z" />
+            </g>
             @if (flights != null)
             {
                 @foreach (var flight in flights)
