@@ -9,4 +9,9 @@ public class FlightApiClient(HttpClient httpClient)
     {
         return await httpClient.GetFromJsonAsync<Flight[]>("/flights", cancellationToken) ?? Array.Empty<Flight>();
     }
+
+    public async Task<WeatherUpdate[]> GetWeatherAsync(CancellationToken cancellationToken = default)
+    {
+        return await httpClient.GetFromJsonAsync<WeatherUpdate[]>("/weather", cancellationToken) ?? Array.Empty<WeatherUpdate>();
+    }
 }

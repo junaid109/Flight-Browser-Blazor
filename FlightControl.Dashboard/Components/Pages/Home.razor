@@ -119,20 +119,25 @@
         </div>
 
         <div class="card-header mt-4">Weather Stations</div>
-        <div class="hud-panel">
-            <div style="display: flex; justify-content: space-between;">
-                <span>JFK</span>
-                <span style="color: var(--success)">CLEAR</span>
-            </div>
-            <div style="font-size: 0.7rem; color: var(--text-secondary)">WIND: 12KT @@ 220°</div>
-        </div>
-        <div class="hud-panel">
-            <div style="display: flex; justify-content: space-between;">
-                <span>LHR</span>
-                <span style="color: var(--warning)">FOGGY</span>
-            </div>
-            <div style="font-size: 0.7rem; color: var(--text-secondary)">VIS: 500M</div>
-        </div>
+        @if (weather == null)
+        {
+             <div class="hud-panel"><small>Loading Sat-Link...</small></div>
+        }
+        else
+        {
+            @foreach (var w in weather)
+            {
+                <div class="hud-panel">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>@w.AirportCode</span>
+                        <span style="@GetConditionStyle(w.Condition)">@w.Condition</span>
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--text-secondary)">
+                        @w.TemperatureC.ToString("F1")°C | WIND: @w.WindSpeedKnots KT @@ @w.WindDirection°
+                    </div>
+                </div>
+            }
+        }
 
         @if (selectedFlight != null)
         {
@@ -193,6 +198,7 @@
 
 @code {
     private Flight[]? flights;
+    private WeatherUpdate[]? weather;
     private Flight? selectedFlight;
     private Timer? timer;
 
@@ -217,7 +223,14 @@
     {
         try
         {
-            flights = await ApiClient.GetFlightsAsync();
+            // Run in parallel
+            var t1 = ApiClient.GetFlightsAsync();
+            var t2 = ApiClient.GetWeatherAsync();
+            await Task.WhenAll(t1, t2);
+
+            flights = t1.Result;
+            weather = t2.Result;
+
             if (selectedFlight != null)
             {
                 selectedFlight = flights.FirstOrDefault(f => f.Id == selectedFlight.Id);
@@ -240,5 +253,17 @@
         var x = (lon + 130) * (100.0 / 150.0);
         var y = (60 - lat) * (100.0 / 30.0);
         return (x, y);
+    }
+
+    private string GetConditionStyle(string condition)
+    {
+        return condition switch
+        {
+            "CLEAR" => "color: var(--success)",
+            "STORM" => "color: var(--danger)",
+            "RAIN" => "color: var(--warning)",
+            "FOGGY" => "color: var(--warning)",
+            _ => "color: var(--text-primary)"
+        };
     }
 }

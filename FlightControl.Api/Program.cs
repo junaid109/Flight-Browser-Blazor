@@ -44,6 +44,21 @@ app.MapPost("/flights/update", ([FromBody] Flight flight, FlightStore store) =>
     return Results.Ok();
 });
 
+app.MapGet("/weather", () => 
+{
+    var rng = new Random();
+    var conditions = new[] { "CLEAR", "CLOUDY", "RAIN", "FOGGY", "STORM" };
+    var airports = new[] { "KJFK", "EGLL", "KLAX", "RJTT", "LFPG" };
+    
+    return airports.Select(code => new WeatherUpdate(
+        code, 
+        conditions[rng.Next(conditions.Length)], 
+        Math.Round(10 + rng.NextDouble() * 20, 1), 
+        rng.Next(0, 30), 
+        rng.Next(0, 360)
+    ));
+});
+
 app.Run();
 
 
